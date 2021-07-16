@@ -1,14 +1,34 @@
 # clayoven ![logo](assets/clayoven.png)
 
-[![Code Climate](https://codeclimate.com/github/artagnon/clayoven.png)](https://codeclimate.com/github/artagnon/clayoven)
+[![Maintainability](https://img.shields.io/codeclimate/maintainability/artagnon/clayoven?style=for-the-badge&logo=code-climate&labelColor=000000&label=Maintainability)](https://codeclimate.com/github/artagnon/clayoven/maintainability)
+[![Test Coverage](https://img.shields.io/codeclimate/coverage/artagnon/clayoven?style=for-the-badge&logo=code-climate&labelColor=000000&label=Test%20Coverage)](https://codeclimate.com/github/artagnon/clayoven/test_coverage)
 
-clayoven is a beautiful website generator with a carefully curated set of features. It has been built at a glacial pace, over a period of [seven years](https://github.com/artagnon/clayoven/commit/d4d40161e9f76dbe74078c669de9af698cf621d6), as [my website](https://artagnon.com) expanded in content. I have a spread of mathematical notes, software-related posts, and even some wider-audience [articles](https://artagnon.com/articles); it suffices to say that clayoven is good on all three fronts. The source files are written in "claytext", a custom format built for elegance and speed.
+clayoven is a beautiful static site generator with a carefully curated set of features. It has been built at a glacial pace, over a period of [eight years](https://github.com/artagnon/clayoven/commit/d4d40161e9f76dbe74078c669de9af698cf621d6), as [my website](https://artagnon.com) expanded in content. I have a spread of mathematical notes, both typeset and handwritten, software-related posts, and some wider-audience articles; while clayoven is primarily aimed at math-heavy sites, it is good on all three fronts. The source files are written in "claytext", a custom format built for elegance and speed.
 
-## The claytext format
+rdoc documentation is available at [clayoven.artagnon.com](https://clayoven.artagnon.com).
 
-Here's an excerpt of claytext, illustrating the main features. I've chosen to use a picture, because syntax highlighting is implemented in vscode, but not in `linguist`.
+## Unique features
 
-![vsclay demo](assets/vsclay-demo.png)
+- Small! ~500 lines of well-written and well-documented Ruby.
+- Beautiful and easily extensible markup, with a dedicated vscode plugin for it.
+- Automatically picks timestamps from git history, respecting moves.
+- Server-side rendering of math, including commutative diagrams, via MathJaX and XyJaX.
+
+## Demo
+
+A starter project is bundled with the following `scratch.index.clay`:
+
+![syntax highlighting demo](https://user-images.githubusercontent.com/37226/113478818-91a7f280-948b-11eb-87f0-3610f2aa3160.png)
+
+whose rendered output can be seen [here](https://artagnon.com/scratch)).
+
+Here's an excerpt of embedded MathJaX with IntelliSense powered by vsclay:
+
+![IntelliSense demo](https://user-images.githubusercontent.com/37226/113474233-24866400-946f-11eb-8e72-b82460d16c71.mp4)
+
+## Getting started
+
+There is no published gem. To get started, clone, run `bundle` to install the required gems, and put `bin/clayoven` in `$PATH`. Then, run `clayoven init` in a fresh directory. To start writing, install [vsclay](https://marketplace.visualstudio.com/items?itemName=artagnon.vsclay) for vscode, which will provide the necessary syntax highlighting, IntelliSense support for MathJaX, and trigger-[incremental build]-on-save functionality.
 
 ## The site-generation engine
 
@@ -16,75 +36,52 @@ All site content is split up into "topics", to put in the sidebar, each of which
 
 So, if you have these files,
 
-    index.clay
-    design/template.slim
+    .vscode/...             # provided by `init`
+    .htaccess               # provided by `init`
+    lib/...                 # provided by `init`
+    design/                 # provided by `init`
+    index.clay              # provided by `init`
+    scratch.index.clay      # provided by `init`
+    404.index.clay          # provided by `init`
     blog.index.clay
-    blog/1.clay
-    blog/2.clay
+    blog/personal/1.clay
+    blog/math/1.clay
     colophon.index.clay
 
-clayoven automatically builds a sidebar with `index`, `blog` and `colophon` (the `IndexPages`). `/blog` will have links to the posts `/blog/1` and `/blog/2` (the `ContentPages`). If there are `ContentPages` for a topic, the `IndexPage` simply serves to give a introduction, with links to articles appearing after the introduction.
+clayoven automatically builds a sidebar with `index`, `blog` and `colophon` (each of which are instances of `IndexPage`). `/blog` will have links to the posts `/blog/personal/1` and `/blog/math/1` (each of which are instances of `ContentPage`), under the titles `personal` and `math` (the "subtopics"). If there multiple `ContentPage` entries under an `IndexPage`, the latter simply serves to give a introduction, with links to articles automatically appearing after the introduction. `IndexPage` and `ContentPage` are run through the same `design/template.slim`, and the template file has access to the accessors.
 
-`IndexPages` and `ContentPages` are run through the same `template.slim`, which is expected to conditionally reason about the available accessors. To illustrate, here's a simple `template.slim`:
-
-```slim
-doctype html
-html
-  head
-    title clayoven: #{permalink}
-  body
-    div id="main"
-      h1 = title
-      time = crdate.strftime("%F")
-      - paragraphs.each do |paragraph|
-        - if paragraph.is_plain?
-          = paragraph.to_s
-    div id="sidebar"
-      ul
-        - if topics
-          - topics.each do |topic|
-            li
-              a href="/#{topic}" = topic
-```
-
-The engine works closely with the git object store, and builds are incremental by default; it mostly Just Works, and when it doesn't, there's an option to force a full build. The engine also pulls out the created-timestamp (`Page#crdate`) and last-modified-timestamp (`Page#lastmod`) from git, respecting moves; as long as there is a significant correlation between old content and new content, `authdate` is calculated on the old content. `ContentPages` are sorted by `authdate`, reverse-chronologically, and `IndexPages` are sorted alphabetically.
+The engine works closely with the git object store, and builds are incremental by default; it mostly Just Works, and when it doesn't, there's an option to force a full rebuild. The engine also pulls out the created-timestamp (`Page#crdate`) and last-modified-timestamp (`Page#lastmod`) from git, respecting moves. `ContentPages` are sorted by `crdate`, reverse-chronologically, and `IndexPages` are sorted alphabetically.
 
 ## Usage
 
-Run `bundle` to install the required gems, and `clayoven` in a fresh git repository with a `.clayoven` directory; it generates some template files, and an `index.html` is produced.
-
+- `clayoven init` to generate the necessary starter project.
 - `clayoven` to generate html files incrementally based on the current git index.
-- `clayoven aggressive` to regenerate the entire site along with a `sitemap.xml.gz`; run occassionally.
+- `clayoven aggressive` to regenerate the entire site; only requires to be run on occassion.
 - `clayoven httpd` to preview your website locally.
-
-Use [MathJax](https://www.mathjax.org) to render LaTeX, an [extension](https://github.com/sonoisa/XyJax) to render commutative diagrams, and [highlight.js](https://highlightjs.org) to do syntax highlighting.
 
 ## Configuration
 
 1. `.clayoven/sitename` is URL of the site, excluding the `https://` prefix.
 2. `.clayoven/hidden` is a list of `IndexFiles` that should be built, but not displayed in the sidebar. You would want to use it for your 404 page and drafts.
-3. `.clayoven/tz` is a timezone-to-location mapping with lines of the form `+0000 London`. clayoven digs through the git history for locations, and exposes a `Page#locations`.
+3. `.clayoven/tz` is a timezone-to-location mapper, with lines of the form `+0000 London`. clayoven digs through the git history for locations, and exposes a `Page#locations`.
+4. `.clayoven/subtopic` is a [subtopic directory]-to-subtitle mapper, with lines of the form `inf ∞-categories`.
 
-## Workflow and vscode integration
+## The claytext processor
 
-Use [vsclay](https://github.com/artagnon/vsclay) for syntax highligting claytext; it additionally installs [another extension](https://marketplace.visualstudio.com/items?itemName=Gruntfuggly.triggertaskonsave), which needs to be configured to trigger build-on-save.
+The claytext processor is, at its core, a paragraph-processor; all content must be split up into either plain paragraphs, or "fences" (multiple paragraphs delimited by start and end tokens). The function of most markers should be evident from the `scratch.html` produced by a `clayoven init`. The format is strict, and the processor doesn't like files with paragraphs wrapped using hard line breaks.
+
+`Clayoven::Claytext::Transforms::LINE` matches paragraphs where all lines begin with some regex, and `Clayoven::Claytext::Transforms::Fenced` match fences (could be multiple paragraphs) that start and end with the specified tokens. In addition to this, there are inline markdown markers `` `...` `` and `[...](...)`, for content that is to be put in `<mark>` and `<a>`, respectively.
 
 ## Tips
 
 - Check in the generated html to the site's repository, so that eyeballing `git diff` can serve as a testing mechanism.
-- Use suitable rewrite rules for your webserver to have URLs without the ugly `.html` suffix.
-- If you accidentally commit `.clay` files before running clayoven, running it afterward will do nothing, since it will see a clean git index; you'll need to run the aggressive variant. This kind of situation doesn't occur in the first place if you follow the [workflow guidelines](/README.md#workflow-and-vscode-integration).
+- If you accidentally commit `.clay` files before running clayoven, running it afterward will do nothing, since it will see a clean git index; you'll need to run the aggressive variant.
 - Importing historical content is easy; a `git commit --date="#{historical_date}"` would give the post an appropriate creation date that will be respected in the sorting-order.
-- Attempting to shave startup time by optimizing the Ruby is not a productive direction; the biggest contributor to the runtime, by far, are the multiple shell-outs to git. Using `libgit2` bindings might be a good idea, but for the fact that it doesn't implement `git log --follow`.
-
-## The claytext processor
-
-The claytext processor is, at its core, a paragraph-processor; all content must be split up into paragraphs, decorated with optional first-and-last-line-markers. The function of `<< ... >>`, `$$ ... $$`, and `~~ ... ~~` markers should be evident from the [example](/README.md#the-claytext-format); the marker tokens must be in lines of their own. The first paragraph is optionally a header, and if so, markers `( ... )` must be used. The last paragraph is an optional footer, prefixed with `[^\d+]:` lines to enable the footer. In a paragraph with lists, each line must begin with the numeral or roman numeral, as shown. The format is strict, and the processor doesn't like files with paragraphs wrapped using hard line breaks, for instance.
-
-`PARAGRAPH_LINE_FILTERS` matches paragraphs where all lines begin with some regex, and `PARAGRAPH_START_END_FILTERS` match paragraphs that start and end with the specified tokens.
 
 ## Planned features, and anti-features
 
-- Improve vsclay.
-- Port to [Crystal](https://crystal-lang.org/) once Crystal is mature enough.
-- Anti: extending claytext in ways that would necessitate an ugly implementation.
+- Have one unified dhall configuration.
+- Allow the user to extend claytext syntax with configuration.
+- Hit 100% test coverage.
+- Get vsclay to report syntax errors.
+- Anti: extend clayoven in ways that would necessitate an ugly implementation.

@@ -1,0 +1,26 @@
+AllCops:
+  TargetRubyVersion: 3.0.0
+Naming/FileName:
+  Enabled: false
+Style/FrozenStringLiteralComment:
+  Enabled: false
+Style/SingleLineMethods:
+  Enabled: false
+Style/Semicolon:
+  Enabled: false
+Style/ClassAndModuleChildren:
+  EnforcedStyle: compact
+Style/AsciiComments:
+  Enabled: false
+Style/SpecialGlobalVars:
+  EnforcedStyle: use_perl_names
+Layout/EmptyLineBetweenDefs:
+  Enabled: false
+Naming/HeredocDelimiterNaming:
+  Enabled: false
+Metrics/AbcSize:
+  Max: 21
+Metrics/MethodLength:
+  Max: 15
+Metrics/ModuleLength:
+  Max: 120
